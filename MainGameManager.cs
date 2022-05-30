@@ -4,12 +4,12 @@ namespace SynchronousPlugin.KWY
 {
     class MainGameManager : IMainGameManager
     {
-        public Dictionary<string, Dictionary<int, int>> ActionData { get; private set; } = new Dictionary<string, Dictionary<int, int>>();
-        public Dictionary<int, int> NowActionData { get; private set; } = new Dictionary<int, int>();
+        public Dictionary<string, Dictionary<int, string>> ActionData { get; private set; } = new Dictionary<string, Dictionary<int, string>>();
+        public Dictionary<int, string> NowActionData { get; private set; } = new Dictionary<int, string>();
         public MainGameManager(string id1, string id2)
         {
-            ActionData.Add(id1, new Dictionary<int, int>());
-            ActionData.Add(id2, new Dictionary<int, int>());
+            ActionData.Add(id1, new Dictionary<int, string>());
+            ActionData.Add(id2, new Dictionary<int, string>());
         }
 
         /// <summary>
@@ -18,9 +18,9 @@ namespace SynchronousPlugin.KWY
         /// <param name="d1">Action data from client A</param>
         /// <param name="d2">Action data from client B</param>
         /// <returns>Combined action data: Dictionary(int, int)</returns>
-        public Dictionary<int, int> CombineActionData()
+        public Dictionary<int, string> CombineActionData()
         {
-            Dictionary<int, int> combinedAcitionData = new Dictionary<int, int>();
+            Dictionary<int, string> combinedAcitionData = new Dictionary<int, string>();
 
             foreach (var d in ActionData.Values)
             {
@@ -41,7 +41,7 @@ namespace SynchronousPlugin.KWY
             return true;
         }
 
-        public bool SetActionData(string id, Dictionary<int, int> actionData)
+        public bool SetActionData(string id, Dictionary<int, string> actionData)
         {
             if (!ActionData.ContainsKey(id))
             {
