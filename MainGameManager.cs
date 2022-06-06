@@ -4,12 +4,26 @@ namespace SynchronousPlugin.KWY
 {
     class MainGameManager : IMainGameManager
     {
-        public Dictionary<string, Dictionary<int, string>> ActionData { get; private set; } = new Dictionary<string, Dictionary<int, string>>();
-        public Dictionary<int, string> NowActionData { get; private set; } = new Dictionary<int, string>();
+        public Dictionary<string, ActionData> userActionData { get; private set; }
+        public ActionData NowActionData { get; private set; } = new ActionData();
+
+        public MainGameManager()
+        {
+            userActionData = new Dictionary<string, ActionData>();
+            NowActionData = new ActionData();
+        }
+
         public MainGameManager(string id1, string id2)
         {
-            ActionData.Add(id1, new Dictionary<int, string>());
-            ActionData.Add(id2, new Dictionary<int, string>());
+            userActionData = new Dictionary<string, ActionData>();
+            NowActionData = new ActionData();
+            userActionData.Add(id1, new ActionData());
+            userActionData.Add(id2, new ActionData());
+        }
+
+        public void AddUserId(string id)
+        {
+            userActionData.Add(id, new ActionData());
         }
 
         /// <summary>
@@ -18,13 +32,36 @@ namespace SynchronousPlugin.KWY
         /// <param name="d1">Action data from client A</param>
         /// <param name="d2">Action data from client B</param>
         /// <returns>Combined action data: Dictionary(int, int)</returns>
-        public Dictionary<int, string> CombineActionData()
+        public ActionData CombineActionData()
         {
-            Dictionary<int, string> combinedAcitionData = new Dictionary<int, string>();
+            ActionData combinedAcitionData = new ActionData();
 
-            foreach (var d in ActionData.Values)
+            foreach (var d in userActionData.Values)
             {
                 // 두 개 데이터 합치기
+                foreach(var timeAction in d.Data)
+                {
+                    if (combinedAcitionData.Data.ContainsKey(timeAction.Key))
+                    {
+                        object[] tData = new object[combinedAcitionData.Data[timeAction.Key].Length + timeAction.Value.Length];
+                        int idx = 0;
+                        foreach (object[] t in combinedAcitionData.Data[timeAction.Key])
+                        {
+                            tData[idx++] = t;
+                        }
+
+                        foreach (object[] t in timeAction.Value)
+                        {
+                            tData[idx++] = t;
+                        }
+
+                        combinedAcitionData.Data[timeAction.Key] = tData;
+                    }
+                    else
+                    {
+                        combinedAcitionData.Data.Add(timeAction.Key, timeAction.Value);
+                    }
+                }
             }
 
             return combinedAcitionData;
@@ -32,30 +69,30 @@ namespace SynchronousPlugin.KWY
 
         public bool RemoveUser(string id)
         {
-            return ActionData.Remove(id);
+            return userActionData.Remove(id);
         }
 
         public bool CheckAllReady()
         {
-            if (NowActionData.Count == 0) return false;
+            if (NowActionData.Data.Count == 0) return false;
             return true;
         }
 
-        public bool SetActionData(string id, Dictionary<int, string> actionData)
+        public bool SetActionData(string id, ActionData actionData)
         {
-            if (!ActionData.ContainsKey(id))
+            if (!userActionData.ContainsKey(id))
             {
                 return false;
             }
 
-            ActionData[id] = actionData;
+            userActionData[id] = actionData;
 
 
             // 두 개의 데이터가 모두 들어와 있으면 simulData 만들기
             bool flag = true;
-            foreach (var v in ActionData.Values)
+            foreach (var v in userActionData.Values)
             {
-                if (v.Count == 0) flag = false;
+                if (v.Data.Count == 0) flag = false;
             }
 
             if (flag)
@@ -68,11 +105,11 @@ namespace SynchronousPlugin.KWY
 
         public void ResetData()
         {
-            foreach (string k in ActionData.Keys)
+            foreach (string k in userActionData.Keys)
             {
-                ActionData[k].Clear();
+                userActionData[k].Data.Clear();
             }
-            NowActionData.Clear();
+            NowActionData.Data.Clear();
         }
     }
 }

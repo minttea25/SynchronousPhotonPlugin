@@ -44,6 +44,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActionData.cs" />
+    <Compile Include="Enum.cs" />
     <Compile Include="EvCodeEnum.cs" />
     <Compile Include="IMainGameManager.cs" />
     <Compile Include="IRoomManager.cs" />

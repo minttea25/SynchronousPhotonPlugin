@@ -14,7 +14,7 @@ namespace SynchronousPlugin.KWY
         #region Added Properties
 
         private RoomManager roomManager = new RoomManager();
-        private MainGameManager gameManager = null;
+        private MainGameManager gameManager = new MainGameManager();
 
         #endregion
 
@@ -253,7 +253,8 @@ namespace SynchronousPlugin.KWY
                 {
                     string[] ids = new string[2];
                     roomManager.LobbyReadyState.Keys.CopyTo(ids, 0);
-                    gameManager = new MainGameManager(ids[0], ids[1]);
+                    gameManager.AddUserId(ids[0]);
+                    gameManager.AddUserId(ids[1]);
 
                     host.LogInfo($"### MainGameManager instant is created with {ids[0]}, {ids[1]}");
                 }
@@ -272,18 +273,28 @@ namespace SynchronousPlugin.KWY
         {
             info.Request.EvCode = (byte)EvCode.ResTurnReady;
 
-            var data = (Dictionary<int, int>)info.Request.Data;
+            ActionData data;
+
+            if (info.Request.Data is Dictionary<int, object[]> dictionary)
+            {
+                data = new ActionData(dictionary);
+            }
+            else
+            {
+                host.LogInfo($"### Data is not ActionData!!!!!!!!!!!!!!!!!!!!!!!!");
+                return;
+            }
 
             bool ok = gameManager.SetActionData(info.UserId, data);
             bool startSimul = gameManager.CheckAllReady();
 
             if (startSimul)
             {
-                Dictionary<int, int> newData = gameManager.NowActionData;
+                ActionData newData = gameManager.NowActionData;
 
                 info.Request.Data = new object[]
                 {
-                    info.UserId, ok, startSimul, newData
+                    info.UserId, ok, startSimul, newData.Data
                 };
 
                 host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {ok}, {startSimul}, {newData}");
