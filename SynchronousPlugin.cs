@@ -243,9 +243,15 @@ namespace SynchronousPlugin.KWY
             var data = (object[])info.Request.Data;
 
             bool ok = roomManager.SetReadyState(info.UserId, (bool)data[0]);
+
+            bool newState = false;
+            if (ok)
+            {
+                newState = roomManager.LobbyReadyState[info.UserId];
+            }
             bool startGame = roomManager.CheckAllReady();
 
-            info.Request.Data = new object[] { info.UserId, ok, startGame };
+            info.Request.Data = new object[] { info.UserId, ok, newState, startGame };
 
             if (startGame)
             {
@@ -266,7 +272,7 @@ namespace SynchronousPlugin.KWY
             }
 
 
-            host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {ok}, {startGame}");
+            host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {ok}, {newState}, {startGame}");
         }
 
         public static void EventTurnReady(IRaiseEventCallInfo info, MainGameManager gameManager, IPluginHost host)

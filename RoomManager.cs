@@ -8,6 +8,11 @@ namespace SynchronousPlugin.KWY
 
         public bool AddNewUser(string id)
         {
+            if (IsFull())
+            {
+                return false;
+            }
+
             if (LobbyReadyState.ContainsKey(id))
             {
                 return false;
@@ -24,6 +29,12 @@ namespace SynchronousPlugin.KWY
 
         public bool CheckAllReady()
         {
+            // if numeber of players is only one, return false;
+            if (!IsFull())
+            {
+                return false;
+            }
+
             foreach (bool r in LobbyReadyState.Values)
             {
                 if (!r) return false;
@@ -40,6 +51,11 @@ namespace SynchronousPlugin.KWY
 
             LobbyReadyState[id] = state;
             return true;
+        }
+
+        private bool IsFull()
+        {
+            return LobbyReadyState.Count == 2;
         }
     }
 }
