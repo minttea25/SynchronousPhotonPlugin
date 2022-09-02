@@ -13,7 +13,7 @@ deploy\LoadBalancing\GameServer\bin\GameServer.xml.config - GameServer : ip및 �
 deploy\Plugins 에 SynchronousPlugin 디렉터리 생성<br>
 deploy\Plugins\SynchronousPlugin 에 bin 디렉터리 생성<br>
 
-아래 파일들을 deploy\Plugins\SynchronousPlugin에 복사<br>
+아래 파일들을 deploy\Plugins\SynchronousPlugin\bin에 복사<br>
 PhotonHivePlugin.dll<br>
 PhotonHivePlugin.pdb<br>
 SynchronousPlugin.dll<br> 
