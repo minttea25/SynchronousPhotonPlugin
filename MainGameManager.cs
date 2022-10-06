@@ -36,31 +36,11 @@ namespace SynchronousPlugin.KWY
         {
             ActionData combinedAcitionData = new ActionData();
 
-            foreach (var d in userActionData.Values)
+            foreach(string user in userActionData.Keys)
             {
-                // 두 개 데이터 합치기
-                foreach(var timeAction in d.Data)
+                foreach(int id in userActionData[user].Data.Keys)
                 {
-                    if (combinedAcitionData.Data.ContainsKey(timeAction.Key))
-                    {
-                        object[] tData = new object[combinedAcitionData.Data[timeAction.Key].Length + timeAction.Value.Length];
-                        int idx = 0;
-                        foreach (object[] t in combinedAcitionData.Data[timeAction.Key])
-                        {
-                            tData[idx++] = t;
-                        }
-
-                        foreach (object[] t in timeAction.Value)
-                        {
-                            tData[idx++] = t;
-                        }
-
-                        combinedAcitionData.Data[timeAction.Key] = tData;
-                    }
-                    else
-                    {
-                        combinedAcitionData.Data.Add(timeAction.Key, timeAction.Value);
-                    }
+                    combinedAcitionData.Data.Add(id, userActionData[user].Data[id]);
                 }
             }
 
