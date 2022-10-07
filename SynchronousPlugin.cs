@@ -170,7 +170,7 @@ namespace SynchronousPlugin.KWY
             PluginHost.LogInfo($"### ActorNr {info.ActorNr}");
             PluginHost.LogInfo($"### AuthCookie {info.AuthCookie}");
             PluginHost.LogInfo($"### AuthCookie {info.Request.Data.ToString()}");
-
+#if DEBUG
             try
             {
                 if (info.Request.Data is object[])
@@ -181,14 +181,17 @@ namespace SynchronousPlugin.KWY
                             PluginHost.LogInfo($"### data: {o.ToString()}");
                     }
                 }
+                else if (info.Request.Data is Dictionary<int, object[]>)
+                {
+                    PluginHost.LogInfo($"### data: turnReady Data , type: {info.Request.Data.GetType()} ");
+                }
                 else
                 {
                     PluginHost.LogInfo($"### data: {info.Request.Data}");
                 }
-
-
             }
             catch (Exception) { }
+#endif
 
             switch (info.Request.EvCode)
             {
@@ -277,6 +280,7 @@ namespace SynchronousPlugin.KWY
 
         public static void EventTurnReady(IRaiseEventCallInfo info, MainGameManager gameManager, IPluginHost host)
         {
+            host.LogInfo($"### EventTurnReady1");
             info.Request.EvCode = (byte)EvCode.ResTurnReady;
 
             ActionData data;
@@ -290,6 +294,7 @@ namespace SynchronousPlugin.KWY
                 host.LogInfo($"### Data is not ActionData!!!!!!!!!!!!!!!!!!!!!!!!");
                 return;
             }
+            host.LogInfo($"### EventTurnReady2");
 
             bool ok = gameManager.SetActionData(info.UserId, data);
             bool startSimul = gameManager.CheckAllReady();
