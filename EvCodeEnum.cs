@@ -9,8 +9,8 @@ namespace SynchronousPlugin.KWY
     public enum EvCode : byte
     {
         // for lobby
-        LobbyReady = 10,
-        ResLobbyReady = 110,
+        LobbyGameReady = 10,
+        ResGameReady = 110,
 
         // for main
         TurnReady = 11,

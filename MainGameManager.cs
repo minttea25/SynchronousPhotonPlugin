@@ -4,6 +4,8 @@ namespace SynchronousPlugin.KWY
 {
     class MainGameManager : IMainGameManager
     {
+        public uint turnNum = 1;
+
         public Dictionary<string, ActionData> userActionData { get; private set; }
         public ActionData NowActionData { get; private set; } = new ActionData();
 

@@ -13,8 +13,10 @@ namespace SynchronousPlugin.KWY
 
         #region Added Properties
 
-        private RoomManager roomManager = new RoomManager();
-        private MainGameManager gameManager = new MainGameManager();
+        //private RoomManager roomManager = new RoomManager();
+        //private MainGameManager gameManager = new MainGameManager();
+
+        private readonly ManagerHandler manager = new ManagerHandler();
 
         #endregion
 
@@ -24,10 +26,10 @@ namespace SynchronousPlugin.KWY
 
             TestProperties();
 
-            PluginHost.LogInfo($"##### {roomManager.LobbyReadyState}");
-            PluginHost.LogInfo($"##### size: {roomManager.LobbyReadyState.Keys.Count}");
+            /*PluginHost.LogInfo($"##### {manager.GetManager(id).roomManager.LobbyReadyState}");
+            PluginHost.LogInfo($"##### size: {manager.GetManager(id).roomManager.LobbyReadyState.Keys.Count}");
 
-            if (roomManager.AddNewUser(info.UserId))
+            if (manager.GetManager(id).roomManager.AddNewUser(info.UserId))
             {
                 PluginHost.LogInfo($"### user {info.UserId} is added in Room Manager");
             }
@@ -36,14 +38,13 @@ namespace SynchronousPlugin.KWY
                 PluginHost.LogError($"### Can not add user {info.UserId} in Room Manager.");
             }
 
-            foreach (string i in roomManager.LobbyReadyState.Keys)
+            foreach (string i in manager.GetManager(id).roomManager.LobbyReadyState.Keys)
             {
-                bool a;
-                roomManager.LobbyReadyState.TryGetValue(i, out a);
+                manager.GetManager(id).roomManager.LobbyReadyState.TryGetValue(i, out bool a);
                 PluginHost.LogInfo($"##### {i}, {a}");
-            }
+            }*/
 
-
+            //info.CreateOptions.Add("key", id);
 
             /*var data = new System.Collections.Generic.Dictionary<byte, object>()
             { { 3, "needed data"} };
@@ -106,14 +107,16 @@ namespace SynchronousPlugin.KWY
         {
             PluginHost.LogInfo($"### OnJoin {info.Request.GameId} by user {info.UserId}");
 
-            if (roomManager.AddNewUser(info.UserId))
+            /*string gameId = info.Request.GameId;
+
+            if (manager.GetManager(id).roomManager.AddNewUser(info.UserId))
             {
-                PluginHost.LogInfo($"### user {info.UserId} is added in Room Manager");
+                PluginHost.LogInfo($"### user {info.UserId} is added in Room[{gameId}]");
             }
             else
             {
-                PluginHost.LogError($"### Can not add user {info.UserId} in Room Manager.");
-            }
+                PluginHost.LogError($"### Can not add user {info.UserId} in Room[{gameId}].");
+            }*/
 
             base.OnJoin(info);
         }
@@ -122,14 +125,14 @@ namespace SynchronousPlugin.KWY
         {
             PluginHost.LogInfo($"### OnLeave by user {info.UserId}");
 
-            if (roomManager.RemoveUser(info.UserId))
+            /*if (roomManager.RemoveUser(info.UserId))
             {
                 PluginHost.LogInfo($"### User {info.UserId} is removed in Room Manager");
             }
             else
             {
                 PluginHost.LogError($"### There is no user, User {info.UserId}: Failed to remove user in Room Manager");
-            }
+            }*/
 
             base.OnLeave(info);
         }
@@ -169,7 +172,7 @@ namespace SynchronousPlugin.KWY
 
             PluginHost.LogInfo($"### ActorNr {info.ActorNr}");
             PluginHost.LogInfo($"### AuthCookie {info.AuthCookie}");
-            PluginHost.LogInfo($"### AuthCookie {info.Request.Data.ToString()}");
+            PluginHost.LogInfo($"### Request.Data.GetType() {info.Request.Data.GetType()}");
 #if DEBUG
             try
             {
@@ -195,17 +198,17 @@ namespace SynchronousPlugin.KWY
 
             switch (info.Request.EvCode)
             {
-                case (byte)EvCode.LobbyReady:
-                    RaiseEventCallBackClasses.EventLobbyReady(info, roomManager, gameManager, PluginHost);
+                case (byte)EvCode.LobbyGameReady:
+                    RaiseEventCallBackClasses.EventGameReady(info, manager, PluginHost);
                     break;
                 case (byte)EvCode.TurnReady:
-                    RaiseEventCallBackClasses.EventTurnReady(info, gameManager, PluginHost);
+                    RaiseEventCallBackClasses.EventTurnReady(info, manager, PluginHost);
                     break;
                 case (byte)EvCode.SimulEnd:
-                    RaiseEventCallBackClasses.EventSimulEnd(info, gameManager, PluginHost);
+                    RaiseEventCallBackClasses.EventSimulEnd(info, manager, PluginHost);
                     break;
                 case (byte)EvCode.GameEnd:
-                    RaiseEventCallBackClasses.EventGameEnd(info, gameManager, PluginHost);
+                    RaiseEventCallBackClasses.EventGameEnd(info, manager, PluginHost);
                     break;
                 case 100:
                     info.Request.Data = RaiseEventCallBackClasses.Event100(info, PluginHost);
@@ -239,13 +242,43 @@ namespace SynchronousPlugin.KWY
 
     class RaiseEventCallBackClasses : PluginBase
     {
-        public static void EventLobbyReady(IRaiseEventCallInfo info, RoomManager roomManager, MainGameManager gameManager, IPluginHost host)
+        public static void EventGameReady(IRaiseEventCallInfo info, ManagerHandler manager, IPluginHost host)
         {
-            info.Request.EvCode = (byte)EvCode.ResLobbyReady;
+            info.Request.EvCode = (byte)EvCode.ResGameReady;
 
             var data = (object[])info.Request.Data;
 
-            bool ok = roomManager.SetReadyState(info.UserId, (bool)data[0]);
+            string masterId = (string)data[0];
+            string clientId = (string)data[1];
+            bool flag = (bool)data[2];
+
+
+            if (masterId == null || clientId == null || !flag)
+            {
+                // wrong event
+                host.LogError($"### Wrong Event Received. Client may have an error.");
+                flag = false;
+                info.Request.Data = new object[] { flag, $"### Wrong Event Received. Client may have an error.", null };
+                return;
+            }
+            // masterId = gameId 지정
+            int id = manager.CreateNewRoom(masterId, masterId, clientId);
+
+            if (id == ManagerHandler.INVALID_ROOM)
+            {
+                // error
+                host.LogError($"### An error occured at creating new room: ManagerHandler.CreateNewRoom()");
+                flag = false;
+                info.Request.Data = new object[] { flag, null, null };
+                return;
+            }
+
+            host.LogInfo($"### A new room is created id={id} at gameId={info.Request.GameId}");
+
+            flag = true;
+            info.Request.Data = new object[] { flag, masterId, clientId, id };
+
+            /*bool ok = roomManager.SetReadyState(info.UserId, (bool)data[0]);
 
             bool newState = false;
             if (ok)
@@ -272,16 +305,26 @@ namespace SynchronousPlugin.KWY
                     host.LogError(e.Message);
                 }
 
-            }
+            }*/
 
-
-            host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {ok}, {newState}, {startGame}");
+            host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {flag}, {masterId}, {clientId}, {id}");
         }
 
-        public static void EventTurnReady(IRaiseEventCallInfo info, MainGameManager gameManager, IPluginHost host)
+        public static void EventTurnReady(IRaiseEventCallInfo info, ManagerHandler manager, IPluginHost host)
         {
-            host.LogInfo($"### EventTurnReady1");
+            host.LogInfo($"### EventTurnReady");
             info.Request.EvCode = (byte)EvCode.ResTurnReady;
+
+            int roomId = manager.GetRoomIdFromUserId(info.UserId);
+
+            if (roomId == ManagerHandler.INVALID_ROOM)
+            {
+                // error
+                host.LogError($"Can not find room, gameId=[{info.Request.GameId}]");
+                info.Request.Data = new object[] { info.UserId, false, null };
+                host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {false}, {null}");
+                return;
+            }
 
             ActionData data;
 
@@ -291,17 +334,18 @@ namespace SynchronousPlugin.KWY
             }
             else
             {
-                host.LogInfo($"### Data is not ActionData!!!!!!!!!!!!!!!!!!!!!!!!");
+                host.LogError($"### Data is not ActionData!!!!!!!!!!!!!!!!!!!!!!!!");
+                info.Request.Data = new object[] { info.UserId, false, null };
+                host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {false}, {null}");
                 return;
             }
-            host.LogInfo($"### EventTurnReady2");
 
-            bool ok = gameManager.SetActionData(info.UserId, data);
-            bool startSimul = gameManager.CheckAllReady();
+            bool ok = manager.GetManager(roomId).mainGameManager.SetActionData(info.UserId, data);
+            bool startSimul = manager.GetManager(roomId).mainGameManager.CheckAllReady();
 
             if (startSimul)
             {
-                ActionData newData = gameManager.NowActionData;
+                ActionData newData = manager.GetManager(roomId).mainGameManager.NowActionData;
 
                 info.Request.Data = new object[]
                 {
@@ -320,18 +364,59 @@ namespace SynchronousPlugin.KWY
                 host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {ok}, {startSimul}");
             }
 
-
+            host.LogInfo($"### [gameId={info.Request.GameId}, id={roomId}] EventTurnReady userId={info.UserId}");
         }
 
-        public static void EventSimulEnd(IRaiseEventCallInfo info, MainGameManager gameManager, IPluginHost host)
+        public static void EventSimulEnd(IRaiseEventCallInfo info, ManagerHandler manager, IPluginHost host)
         {
             info.Request.EvCode = (byte)EvCode.ResSimulEnd;
-            gameManager.ResetData(); // actionData 리셋
+
+            int roomId = manager.GetRoomIdFromUserId(info.UserId);
+
+            if (roomId == ManagerHandler.INVALID_ROOM)
+            {
+                // error
+                host.LogError($"Can not find room gameId=[{info.Request.GameId}] on photon plugin");
+                info.Request.Data = new object[] { info.UserId, false, $"Can not find room gameId=[{info.Request.GameId}] on photon plugin" };
+                return;
+            }
+
+            host.LogInfo($"### [gameId={info.Request.GameId}, id={roomId}] EventSimulEnd ended turn: {manager.GetManager(roomId).mainGameManager.turnNum}");
+
+            manager.GetManager(roomId).mainGameManager.turnNum++; // 턴 증가
+
+            manager.GetManager(roomId).mainGameManager.ResetData(); // actionData 리셋
         }
 
-        public static void EventGameEnd(IRaiseEventCallInfo info, MainGameManager gameManager, IPluginHost host)
+        public static void EventGameEnd(IRaiseEventCallInfo info, ManagerHandler manager, IPluginHost host)
         {
             info.Request.EvCode = (byte)EvCode.ResGameEnd;
+
+            int roomId = manager.GetRoomIdFromUserId(info.UserId);
+
+            if (roomId == ManagerHandler.INVALID_ROOM)
+            {
+                // error
+                host.LogError($"Can not find room, gameId=[{info.Request.GameId}]");
+                info.Request.Data = new object[] { info.UserId, false, null };
+                host.LogInfo($"### Evcode: {info.Request.EvCode}, Data: {info.UserId}, {false}, {$"Can not find room, gameId={info.Request.GameId}"}");
+                return;
+            }
+
+            switch((TICK_RESULT)info.Request.Data) 
+            {
+                case TICK_RESULT.DRAW:
+                    manager.GetManager(roomId).SetReultDraw();
+                    break;
+                case TICK_RESULT.MASTER_WIN:
+                    manager.GetManager(roomId).SetResult(true);
+                    break;
+                case TICK_RESULT.CLIENT_WIN:
+                    manager.GetManager(roomId).SetResult(false);
+                    break;
+            }
+
+            host.LogInfo($"### [gameId={info.Request.GameId}, id={roomId}] EventGameEnd userId={info.UserId}");
         }
 
         public static object[] Event100(IRaiseEventCallInfo info, IPluginHost host)

@@ -50,6 +50,7 @@
     <Compile Include="IMainGameManager.cs" />
     <Compile Include="IRoomManager.cs" />
     <Compile Include="MainGameManager.cs" />
+    <Compile Include="ManagerHandler.cs" />
     <Compile Include="SynchronousPluginFactory.cs" />
     <Compile Include="RoomManager.cs" />
     <Compile Include="SynchronousPlugin.cs" />
